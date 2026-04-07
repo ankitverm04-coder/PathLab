@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PathLab Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Ubuntu+Condensed&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell admin-page-shell">
+    <header class="hero admin-hero">
+      <nav class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <span class="brand-mark-core"></span>
+            <span class="brand-mark-dot"></span>
+          </span>
+          <div class="brand-copy">
+            <p>PathLab Admin</p>
+            <span>Manage reports, readiness, and appointments</span>
+          </div>
+        </div>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="adminNav" aria-label="Open navigation menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="nav-links" id="adminNav">
+          <a href="index.html">Patient Website</a>
+          <a href="#reportManager">Report Manager</a>
+          <a href="#appointmentsPanel">Appointments</a>
+        </div>
+      </nav>
+
+      <section class="hero-content admin-hero-content">
+        <div class="hero-copy">
+          <p class="eyebrow">Operations dashboard</p>
+          <h1>Update reports and mark downloads ready for patients.</h1>
+          <p class="hero-text">
+            Review incoming appointments, edit doctor notes, update statuses, and publish downloadable reports from one admin workspace.
+          </p>
+        </div>
+
+        <div class="admin-metrics-panel">
+          <img class="hero-illustration" src="https://images.pexels.com/photos/5327916/pexels-photo-5327916.jpeg?cs=srgb&dl=pexels-thirdman-5327916.jpg&fm=jpg" alt="Medical professional using a laptop for report and healthcare research">
+          <div class="admin-metrics-grid" id="adminMetrics">
+          <article class="metric-card">
+            <span>Total appointments</span>
+            <strong id="metricAppointments">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Total reports</span>
+            <strong id="metricReports">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Ready to download</span>
+            <strong id="metricReadyReports">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Pending updates</span>
+            <strong id="metricPendingReports">0</strong>
+          </article>
+        </div>
+        </div>
+      </section>
+    </header>
+
+    <main>
+      <section class="section-grid" id="adminLoginSection">
+        <div class="card auth-card admin-auth-card" id="adminLoginCard">
+          <div class="section-heading compact-heading">
+            <p class="eyebrow">Admin access</p>
+            <h2>Sign in to the report console</h2>
+            <p>Default local credentials are <code>admin</code> and <code>admin123</code> unless changed through environment variables.</p>
+          </div>
+
+          <form id="adminLoginForm" class="booking-form">
+            <div class="input-grid">
+              <label>
+                Username
+                <input type="text" id="adminUsernameInput" placeholder="Enter admin username" required>
+              </label>
+              <label>
+                Password
+                <input type="password" id="adminPasswordInput" placeholder="Enter admin password" required>
+              </label>
+            </div>
+            <div class="inline-actions">
+              <button class="button button-primary" type="submit">Login</button>
+            </div>
+            <p class="form-status" id="adminLoginStatus">Login required to view admin data.</p>
+          </form>
+        </div>
+      </section>
+
+      <div id="adminWorkspace" class="hidden">
+      <section class="section-grid admin-grid" id="reportManager">
+        <div class="card admin-form-card">
+          <div class="section-heading compact-heading">
+            <p class="eyebrow">Report manager</p>
+            <h2>Update report status and release downloads</h2>
+          </div>
+
+          <form id="reportUpdateForm" class="booking-form">
+            <label>
+              Select report
+              <select id="reportSelector"></select>
+            </label>
+
+            <div class="input-grid">
+              <label>
+                Status
+                <select id="reportStatusInput">
+                  <option value="Appointment booked">Appointment booked</option>
+                  <option value="Processing in lab">Processing in lab</option>
+                  <option value="Under doctor review">Under doctor review</option>
+                  <option value="Ready for download">Ready for download</option>
+                </select>
+              </label>
+              <label>
+                Download label
+                <input type="text" id="downloadLabelInput" placeholder="Download report">
+              </label>
+            </div>
+
+            <label>
+              Collection summary
+              <input type="text" id="collectedOnInput" placeholder="07 Apr 2026, 7:30 AM">
+            </label>
+
+            <label>
+              Doctor note
+              <textarea id="doctorNoteInput" rows="4" placeholder="Add patient-facing summary or note"></textarea>
+            </label>
+
+            <label>
+              Included report items
+              <textarea id="reportItemsInput" rows="6" placeholder="One report item per line"></textarea>
+            </label>
+
+            <label>
+              Upload report PDF
+              <input type="file" id="reportPdfInput" accept="application/pdf">
+            </label>
+            <p class="demo-note">Upload a PDF to replace the fallback text download with a real report file.</p>
+
+            <label class="checkbox-row">
+              <input type="checkbox" id="canDownloadInput">
+              Mark report as download-ready
+            </label>
+
+            <div class="inline-actions">
+              <button class="button button-primary" type="submit">Save Report Update</button>
+              <button class="button button-secondary" id="adminLogoutButton" type="button">Logout</button>
+            </div>
+            <p class="form-status" id="adminFormStatus">Select a report to start editing.</p>
+          </form>
+        </div>
+
+        <div class="card admin-list-card">
+          <img class="section-image" src="https://images.pexels.com/photos/7578808/pexels-photo-7578808.jpeg?cs=srgb&dl=pexels-tima-miroshnichenko-7578808.jpg&fm=jpg" alt="Medical report review and admin workflow illustration">
+          <div class="section-heading compact-heading">
+            <p class="eyebrow">Report library</p>
+            <h2>Current report feed</h2>
+          </div>
+          <div class="data-list" id="adminReportList">
+            <p class="report-placeholder">Loading report list...</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-grid" id="appointmentsPanel">
+        <div class="section-heading compact-heading">
+          <p class="eyebrow">Appointments</p>
+          <h2>Latest home collections</h2>
+        </div>
+        <div class="card">
+          <div class="data-list" id="adminAppointmentList">
+            <p class="report-placeholder">Loading appointments...</p>
+          </div>
+        </div>
+      </section>
+      </div>
+    </main>
+  </div>
+
+  <button class="theme-toggle-floating" id="themeToggle" type="button" aria-pressed="false" aria-label="Switch to dark theme">
+    <span class="theme-toggle-icon" aria-hidden="true">D</span>
+    <span class="theme-toggle-label">Dark Mode</span>
+  </button>
+
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PathLab Home Care</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Ubuntu+Condensed&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero" id="home">
+      <nav class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <span class="brand-mark-core"></span>
+            <span class="brand-mark-dot"></span>
+          </span>
+          <div class="brand-copy">
+            <p>PathLab Home Care</p>
+            <span>Tests, booking, and reports in one place</span>
+          </div>
+        </div>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="siteNav" aria-label="Open navigation menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="nav-links" id="siteNav">
+          <a href="#home">Home</a>
+          <a href="#home-overview">Services</a>
+          <a href="#booking">Book Test</a>
+          <a href="#reports">Patient Portal</a>
+          <a href="#packages">Packages</a>
+          <a href="admin.html">Admin Login</a>
+        </div>
+      </nav>
+
+      <section class="hero-content">
+        <div class="hero-copy">
+          <p class="eyebrow">At-home pathology appointments made simple</p>
+          <h1>Book a home sample collection in minutes and get your reports here.</h1>
+          <p class="hero-text">
+            Choose your test package, pick a preferred date and time, and track reports from the same patient dashboard.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#booking">Schedule Appointment</a>
+            <a class="button button-secondary" href="#reports">Open Patient Portal</a>
+            <a class="button button-secondary" href="admin.html">Login As Admin</a>
+          </div>
+          <ul class="hero-points">
+            <li>NABL-aligned partner labs</li>
+            <li>Morning to evening home collection slots</li>
+            <li>Digital PDF reports with doctor-ready summary</li>
+          </ul>
+        </div>
+
+        <div class="hero-card">
+          <img class="hero-illustration" src="https://images.pexels.com/photos/6285364/pexels-photo-6285364.jpeg?cs=srgb&dl=pexels-gustavo-fring-6285364.jpg&fm=jpg" alt="Nurse preparing to collect a blood sample from a patient">
+          <div class="hero-card-header">
+            <span>Today’s next available slots</span>
+            <strong>Fast home booking</strong>
+          </div>
+          <div class="slot-list">
+            <div>
+              <p>7:00 AM - 8:00 AM</p>
+              <span>Fasting-friendly</span>
+            </div>
+            <div>
+              <p>10:30 AM - 11:30 AM</p>
+              <span>Most booked</span>
+            </div>
+            <div>
+              <p>6:00 PM - 7:00 PM</p>
+              <span>After office hours</span>
+            </div>
+          </div>
+          <div class="mini-stat-grid">
+            <article>
+              <strong>12k+</strong>
+              <span>home visits done</span>
+            </article>
+            <article>
+              <strong>4.8/5</strong>
+              <span>patient satisfaction</span>
+            </article>
+            <article>
+              <strong>24 hrs</strong>
+              <span>average report turnaround</span>
+            </article>
+          </div>
+        </div>
+      </section>
+    </header>
+
+    <main>
+      <section class="trust-strip">
+        <article>
+          <strong>Easy booking</strong>
+          <p>Book a test online without calling or waiting in queues.</p>
+        </article>
+        <article>
+          <strong>Safe home collection</strong>
+          <p>Certified phlebotomists visit with hygiene-first sample protocols.</p>
+        </article>
+        <article>
+          <strong>Same-site reports</strong>
+          <p>Patients can view report progress and download reports directly.</p>
+        </article>
+      </section>
+
+      <section class="section-grid" id="home-overview">
+        <div class="section-heading">
+          <p class="eyebrow">About the service</p>
+          <h2>Everything a patient needs on one home pathology website</h2>
+          <p>
+            This portal is built for real home collection flow: appointment booking, time-slot confirmation, patient login, live report status, and admin-side report publishing.
+          </p>
+        </div>
+
+        <div class="info-grid">
+          <article class="info-card">
+            <img class="section-image" src="https://images.pexels.com/photos/6629402/pexels-photo-6629402.jpeg?cs=srgb&dl=pexels-karolina-grabowska-6629402.jpg&fm=jpg" alt="Blood sample vials ready for pathology testing">
+            <span>Working hours</span>
+            <h3>Home collection timing</h3>
+            <p>Monday to Sunday, 7:00 AM to 8:00 PM with fasting-friendly morning slots.</p>
+          </article>
+          <article class="info-card">
+            <img class="section-image" src="https://images.pexels.com/photos/6627864/pexels-photo-6627864.jpeg?cs=srgb&dl=pexels-kaboompics-com-6627864.jpg&fm=jpg" alt="Medical reception and support desk helping a patient">
+            <span>Support desk</span>
+            <h3>Patient assistance</h3>
+            <p>Booking help, reschedule support, and report queries through one phone-linked patient account.</p>
+          </article>
+          <article class="info-card">
+            <img class="section-image" src="https://images.pexels.com/photos/7579831/pexels-photo-7579831.jpeg?cs=srgb&dl=pexels-tima-miroshnichenko-7579831.jpg&fm=jpg" alt="Medical professional reviewing pathology results and report turnaround">
+            <span>Turnaround</span>
+            <h3>Reports and delivery</h3>
+            <p>Most routine reports within 24 hours, with ready-to-download PDF reports from the same portal.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-grid" id="portal-access">
+        <div class="section-heading">
+          <p class="eyebrow">Quick access</p>
+          <h2>Choose how you want to enter the system</h2>
+          <p>
+            Patients can log in using OTP to check appointments and reports. Admin staff can sign in to update report status, upload PDFs, and release downloads.
+          </p>
+        </div>
+
+        <div class="portal-entry-grid">
+          <article class="portal-entry-card">
+            <img class="section-image" src="https://images.pexels.com/photos/7195076/pexels-photo-7195076.jpeg?cs=srgb&dl=pexels-karola-g-7195076.jpg&fm=jpg" alt="Patient accessing healthcare information on a laptop">
+            <p class="eyebrow">Patient side</p>
+            <h3>Open Patient Portal</h3>
+            <p>Use the registered mobile number from your booking to get OTP access, view your dashboard, and check reports.</p>
+            <a class="button button-primary" href="#reports">Open Patient Portal</a>
+          </article>
+          <article class="portal-entry-card">
+            <img class="section-image" src="https://images.pexels.com/photos/5327916/pexels-photo-5327916.jpeg?cs=srgb&dl=pexels-thirdman-5327916.jpg&fm=jpg" alt="Medical professional using a laptop to manage reports and appointments">
+            <p class="eyebrow">Admin side</p>
+            <h3>Open Admin Panel</h3>
+            <p>Open the admin desk to manage bookings, update report notes, upload PDFs, and mark reports ready for download.</p>
+            <a class="button button-secondary" href="admin.html">Open Admin Panel</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-grid" id="customer-support">
+        <div class="section-heading">
+          <p class="eyebrow">Customer support</p>
+          <h2>Need help with booking, reports, or rescheduling?</h2>
+          <p>
+            Our support team helps patients with appointment changes, fasting instructions, report access, OTP login issues, and download-related questions.
+          </p>
+        </div>
+
+        <div class="support-grid">
+          <div class="card support-card">
+            <p class="eyebrow">Support desk</p>
+            <h3>Talk to our patient care team</h3>
+            <p class="report-placeholder">Available daily from 7:00 AM to 8:00 PM for home collection, reports, and account help.</p>
+            <div class="support-details">
+              <article>
+                <strong>Helpline</strong>
+                <p>+91 98765 43210</p>
+              </article>
+              <article>
+                <strong>Email</strong>
+                <p>support@pathlabhomecare.com</p>
+              </article>
+              <article>
+                <strong>Response time</strong>
+                <p>Usually within 15 to 30 minutes during working hours</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="card support-card support-actions-card">
+            <p class="eyebrow">What we can help with</p>
+            <h3>Quick support reasons</h3>
+            <ul class="support-list">
+              <li>Reschedule home sample collection</li>
+              <li>Fasting and test preparation help</li>
+              <li>Patient portal OTP login issues</li>
+              <li>Report download and PDF access support</li>
+              <li>Booking confirmation and billing help</li>
+            </ul>
+            <div class="hero-actions support-actions">
+              <a class="button button-primary" href="#booking">Book or Reschedule</a>
+              <a class="button button-secondary" href="#reports">Open Patient Portal</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-grid" id="booking">
+        <div class="section-heading">
+          <p class="eyebrow">Appointment booking</p>
+          <h2>Schedule a pathology visit at home</h2>
+          <p>
+            Fill in basic patient details, choose a test package, and select the collection time that suits your family.
+          </p>
+        </div>
+
+        <div class="booking-layout">
+          <form class="booking-form card" id="bookingForm">
+            <div class="input-grid">
+              <label>
+                Full name
+                <input type="text" id="patientName" placeholder="Enter patient name" required>
+              </label>
+              <label>
+                Phone number
+                <input type="tel" id="phoneNumber" placeholder="Enter mobile number" required>
+              </label>
+              <label>
+                Address
+                <input type="text" id="address" placeholder="House no, street, locality" required>
+              </label>
+              <label>
+                City
+                <input type="text" id="city" placeholder="Enter your city" required>
+              </label>
+              <label>
+                Preferred date
+                <input type="date" id="appointmentDate" required>
+              </label>
+              <label>
+                Test package
+                <select id="package" required>
+                  <option value="">Select package</option>
+                  <option value="Full Body Checkup">Full Body Checkup</option>
+                  <option value="Diabetes Care Panel">Diabetes Care Panel</option>
+                  <option value="Thyroid Profile">Thyroid Profile</option>
+                  <option value="Senior Citizen Wellness">Senior Citizen Wellness</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="time-slot-picker">
+              <p class="field-label">Choose appointment time</p>
+              <div class="time-slots" id="timeSlots">
+                <button type="button" class="time-slot active" data-slot="7:00 AM - 8:00 AM">7:00 AM - 8:00 AM</button>
+                <button type="button" class="time-slot" data-slot="9:00 AM - 10:00 AM">9:00 AM - 10:00 AM</button>
+                <button type="button" class="time-slot" data-slot="11:00 AM - 12:00 PM">11:00 AM - 12:00 PM</button>
+                <button type="button" class="time-slot" data-slot="2:00 PM - 3:00 PM">2:00 PM - 3:00 PM</button>
+                <button type="button" class="time-slot" data-slot="4:00 PM - 5:00 PM">4:00 PM - 5:00 PM</button>
+                <button type="button" class="time-slot" data-slot="6:00 PM - 7:00 PM">6:00 PM - 7:00 PM</button>
+              </div>
+            </div>
+
+            <label>
+              Additional notes
+              <textarea id="notes" rows="4" placeholder="Fasting required, elderly patient, landmark, or special instructions"></textarea>
+            </label>
+
+            <button class="button button-primary button-full" type="submit">Confirm Home Collection</button>
+            <p class="form-status" id="bookingStatus">Your appointment details will appear here after booking.</p>
+          </form>
+
+          <aside class="card summary-card">
+            <p class="eyebrow">How it works</p>
+            <h3>Simple patient journey</h3>
+            <ol>
+              <li>Select your pathology package and preferred visit time.</li>
+              <li>Our phlebotomist arrives at your home for sample collection.</li>
+              <li>Receive status updates and download your report online.</li>
+            </ol>
+            <div class="summary-highlight">
+              <span>Included with every booking</span>
+              <ul>
+                <li>SMS confirmation</li>
+                <li>Digital invoice</li>
+                <li>Doctor-friendly report PDF</li>
+              </ul>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section-grid packages-section" id="packages">
+        <div class="section-heading">
+          <p class="eyebrow">Popular packages</p>
+          <h2>Common pathology tests for home sample collection</h2>
+        </div>
+
+        <div class="packages-grid">
+          <article class="package-card">
+            <span>Complete Wellness</span>
+            <h3>Full Body Checkup</h3>
+            <p>CBC, liver, kidney, lipid, thyroid, sugar, urine routine and more.</p>
+            <strong>From Rs. 1499</strong>
+          </article>
+          <article class="package-card">
+            <span>Routine Monitoring</span>
+            <h3>Diabetes Care Panel</h3>
+            <p>Fasting sugar, HbA1c, kidney markers, urine microalbumin.</p>
+            <strong>From Rs. 799</strong>
+          </article>
+          <article class="package-card">
+            <span>Hormone Health</span>
+            <h3>Thyroid Profile</h3>
+            <p>T3, T4, TSH with expert-reviewed report delivery.</p>
+            <strong>From Rs. 549</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-grid reports-section" id="reports">
+        <div class="section-heading">
+          <p class="eyebrow">Patient portal</p>
+          <h2>Login as patient and access your reports</h2>
+          <p>
+            Patients can sign in using their registered phone number, while report ID search remains available for quick status checks.
+          </p>
+        </div>
+
+        <div class="portal-layout">
+          <div class="card auth-card" id="patient-login">
+            <p class="eyebrow">Patient Login</p>
+            <h3>Secure OTP access for patients</h3>
+            <label>
+              Registered phone number
+              <input type="tel" id="loginPhoneNumber" placeholder="Enter the phone used during booking">
+            </label>
+            <div class="inline-actions">
+              <button class="button button-primary" id="requestOtpButton" type="button">Send OTP</button>
+            </div>
+            <p class="form-status" id="otpRequestStatus">Use the phone number from your appointment booking.</p>
+            <p class="demo-note hidden" id="demoOtpNote"></p>
+
+            <div class="otp-panel hidden" id="otpPanel">
+              <label>
+                Enter OTP
+                <input type="text" id="otpInput" placeholder="6-digit OTP">
+              </label>
+              <div class="inline-actions">
+                <button class="button button-primary" id="verifyOtpButton" type="button">Verify OTP</button>
+                <button class="button button-secondary" id="logoutButton" type="button">Logout</button>
+              </div>
+              <p class="form-status" id="otpVerifyStatus">OTP verification status will appear here.</p>
+            </div>
+          </div>
+
+          <div class="card report-search-card" id="report-lookup">
+            <p class="eyebrow">Report Search</p>
+            <h3>Find reports by report ID</h3>
+            <label>
+              Report ID
+              <input type="text" id="reportIdInput" placeholder="Try: PLHC1024">
+            </label>
+            <button class="button button-primary button-full" id="reportSearchButton" type="button">Find Report</button>
+            <p class="demo-note">Demo report IDs: <code>PLHC1024</code>, <code>PLHC2048</code>, <code>PLHC3096</code></p>
+          </div>
+        </div>
+
+        <div class="card dashboard-card hidden" id="patientDashboard">
+          <div class="dashboard-header">
+            <div>
+              <p class="eyebrow">Patient dashboard</p>
+              <h3 id="dashboardPatientName">Your reports and appointments</h3>
+              <p class="report-placeholder" id="dashboardPhoneLabel"></p>
+            </div>
+            <button class="button button-secondary" id="dashboardLogoutButton" type="button">Logout</button>
+          </div>
+
+          <div class="dashboard-columns">
+            <div>
+              <strong>Upcoming and recent appointments</strong>
+              <div class="data-list" id="appointmentList">
+                <p class="report-placeholder">Login to view your appointments.</p>
+              </div>
+            </div>
+            <div>
+              <strong>Your reports</strong>
+              <div class="data-list" id="patientReportList">
+                <p class="report-placeholder">Login to view your reports.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card report-result-card" id="reportResult">
+          <p class="report-placeholder">Report details will appear here after you search.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand">
+            <span class="brand-mark" aria-hidden="true">
+              <span class="brand-mark-core"></span>
+              <span class="brand-mark-dot"></span>
+            </span>
+            <div>
+              <p>PathLab Home Care</p>
+              <span>Trusted home sample collection with patient-first support.</span>
+            </div>
+          </div>
+          <p class="footer-copy">
+            Book pathology tests at home, choose a convenient collection slot, log in as a patient, and download reports from the same secure platform.
+          </p>
+        </div>
+
+        <div class="footer-column">
+          <p class="footer-title">Quick Links</p>
+          <a href="#home">Home</a>
+          <a href="#booking">Book Test</a>
+          <a href="#reports">Patient Portal</a>
+          <a href="admin.html">Admin Login</a>
+        </div>
+
+        <div class="footer-column">
+          <p class="footer-title">Support</p>
+          <p>Helpline: +91 98765 43210</p>
+          <p>Email: support@pathlabhomecare.com</p>
+          <p>Daily support hours: 7:00 AM to 8:00 PM</p>
+        </div>
+
+        <div class="footer-column">
+          <p class="footer-title">Service Promise</p>
+          <p>Fasting-friendly morning slots</p>
+          <p>Safe home collection workflow</p>
+          <p>Doctor-ready digital PDF reports</p>
+        </div>
+      </div>
+
+      <div class="footer-socials-block">
+        <p class="footer-title">Follow Us On</p>
+      <div class="footer-socials">
+        <a class="social-link" href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2Zm0 1.5A4.25 4.25 0 0 0 3.5 7.75v8.5a4.25 4.25 0 0 0 4.25 4.25h8.5a4.25 4.25 0 0 0 4.25-4.25v-8.5a4.25 4.25 0 0 0-4.25-4.25h-8.5Zm8.88 1.12a1.13 1.13 0 1 1 0 2.26 1.13 1.13 0 0 1 0-2.26ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.5A3.5 3.5 0 1 0 12 15.5 3.5 3.5 0 0 0 12 8.5Z"/></svg>
+        </a>
+        <a class="social-link" href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 22v-8h2.7l.4-3h-3.1V9.1c0-.9.3-1.6 1.7-1.6H16.8V4.8c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.5-4 4.2V11H7.8v3h2.6v8h3.1Z"/></svg>
+        </a>
+        <a class="social-link" href="https://x.com/" target="_blank" rel="noreferrer" aria-label="X">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 3H21l-6.9 7.9L22 21h-6.2l-4.9-6.4L5.3 21H3.2l7.4-8.5L2 3h6.3l4.4 5.9L18.9 3Zm-2.2 16.4h1.2L7.6 4.5H6.3l10.4 14.9Z"/></svg>
+        </a>
+        <a class="social-link" href="https://www.linkedin.com/" target="_blank" rel="noreferrer" aria-label="LinkedIn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.94 8.5a1.81 1.81 0 1 1 0-3.62 1.81 1.81 0 0 1 0 3.62ZM5.4 20V10.2h3.08V20H5.4Zm5.02 0V10.2h2.95v1.34h.04c.41-.78 1.41-1.6 2.9-1.6 3.1 0 3.69 2.04 3.69 4.69V20h-3.08v-4.76c0-1.14-.02-2.6-1.58-2.6-1.58 0-1.83 1.24-1.83 2.52V20h-3.09Z"/></svg>
+        </a>
+        <a class="social-link" href="https://www.youtube.com/" target="_blank" rel="noreferrer" aria-label="YouTube">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.6 7.2a2.99 2.99 0 0 0-2.1-2.12C17.66 4.6 12 4.6 12 4.6s-5.66 0-7.5.48A2.99 2.99 0 0 0 2.4 7.2 31.3 31.3 0 0 0 2 12a31.3 31.3 0 0 0 .4 4.8 2.99 2.99 0 0 0 2.1 2.12c1.84.48 7.5.48 7.5.48s5.66 0 7.5-.48a2.99 2.99 0 0 0 2.1-2.12A31.3 31.3 0 0 0 22 12a31.3 31.3 0 0 0-.4-4.8ZM10.2 15.3V8.7l5.5 3.3-5.5 3.3Z"/></svg>
+        </a>
+        <a class="social-link" href="https://www.snapchat.com/" target="_blank" rel="noreferrer" aria-label="Snapchat">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2c2.7 0 4.6 2 4.6 4.8v1.5c.2.3.6.6 1.2.8.5.2 1 .3 1 .9 0 .7-.9 1-1.6 1.2-.1.5-.5 1-1.1 1.4-.6.4-1.3.6-2 .7-.4.5-.9.8-2.1.8s-1.7-.3-2.1-.8c-.7-.1-1.4-.3-2-.7-.6-.4-1-.9-1.1-1.4-.7-.2-1.6-.5-1.6-1.2 0-.6.5-.7 1-.9.6-.2 1-.5 1.2-.8V8c0-2.8 1.9-4.8 4.6-4.8Zm0 15.6c.6.6 1.8 1 3.1 1.1.2.3.3.6.4 1h-7c.1-.4.2-.7.4-1 1.3-.1 2.5-.5 3.1-1.1Z"/></svg>
+        </a>
+      </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 PathLab Home Care. Home pathology appointments, support, and reports in one place.</p>
+        <div class="footer-bottom-links">
+          <a href="#customer-support">Customer Support</a>
+          <a href="#packages">Packages</a>
+          <a href="#reports">Report Search</a>
+          <a href="terms.html">Terms & Conditions</a>
+          <a href="privacy.html">Privacy Policy</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <button class="theme-toggle-floating" id="themeToggle" type="button" aria-pressed="false" aria-label="Switch to dark theme">
+    <span class="theme-toggle-icon" aria-hidden="true">D</span>
+    <span class="theme-toggle-label">Dark Mode</span>
+  </button>
+
+  <script src="script.js"></script>
+</body>
+</html>

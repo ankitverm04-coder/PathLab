@@ -1,0 +1,9 @@
+{
+  "name": "pathlab-home-care",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pathology home appointment, patient portal, and admin panel",
+  "scripts": {
+    "start": "node --no-warnings=ExperimentalWarning server.js"
+  }
+}

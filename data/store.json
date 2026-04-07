@@ -1,0 +1,84 @@
+{
+  "appointments": [
+    {
+      "bookingId": "PLB5201",
+      "reportId": "PLR8222",
+      "patientName": "Test User",
+      "phoneNumber": "9876543210",
+      "address": "221B Baker Street",
+      "city": "Delhi",
+      "appointmentDate": "2026-04-08",
+      "packageName": "Full Body Checkup",
+      "timeSlot": "9:00 AM - 10:00 AM",
+      "notes": "Fasting patient",
+      "status": "Appointment confirmed",
+      "createdAt": "07 Apr 2026, 11:12 am"
+    }
+  ],
+  "reports": {
+    "PLHC1024": {
+      "patient": "Ananya Sharma",
+      "packageName": "Full Body Checkup",
+      "status": "Ready for download",
+      "badgeClass": "ready",
+      "collectedOn": "07 Apr 2026, 7:30 AM",
+      "updatedOn": "07 Apr 2026, 5:15 PM",
+      "doctorNote": "Most values are within the expected range. Vitamin D follow-up is advised.",
+      "reportItems": [
+        "CBC, lipid profile, kidney function test",
+        "Liver function test and thyroid screening",
+        "Urine routine summary included"
+      ],
+      "downloadLabel": "Download report",
+      "canDownload": true
+    },
+    "PLHC2048": {
+      "patient": "Rahul Mehta",
+      "packageName": "Diabetes Care Panel",
+      "status": "Processing in lab",
+      "badgeClass": "processing",
+      "collectedOn": "07 Apr 2026, 9:10 AM",
+      "updatedOn": "07 Apr 2026, 1:40 PM",
+      "doctorNote": "Sample received and primary biomarkers are under processing.",
+      "reportItems": [
+        "HbA1c analysis underway",
+        "Fasting glucose completed",
+        "Kidney markers pending review"
+      ],
+      "downloadLabel": "Download report",
+      "canDownload": false
+    },
+    "PLHC3096": {
+      "patient": "Sushila Verma",
+      "packageName": "Thyroid Profile",
+      "status": "Under doctor review",
+      "badgeClass": "review",
+      "collectedOn": "06 Apr 2026, 6:15 PM",
+      "updatedOn": "07 Apr 2026, 11:20 AM",
+      "doctorNote": "Lab values are ready and awaiting final clinical sign-off.",
+      "reportItems": [
+        "TSH completed",
+        "T3 and T4 validated",
+        "Final signature pending"
+      ],
+      "downloadLabel": "Download summary",
+      "canDownload": true
+    },
+    "PLR8222": {
+      "patient": "Test User",
+      "packageName": "Full Body Checkup",
+      "status": "Appointment booked",
+      "badgeClass": "processing",
+      "collectedOn": "2026-04-08, 9:00 AM - 10:00 AM",
+      "updatedOn": "07 Apr 2026, 11:12 am",
+      "doctorNote": "Your appointment is booked. Report status will update after sample collection and lab processing.",
+      "reportItems": [
+        "Appointment created successfully",
+        "Sample collection pending",
+        "Lab processing will begin after collection"
+      ],
+      "downloadLabel": "Download report",
+      "canDownload": false
+    }
+  }
+}
