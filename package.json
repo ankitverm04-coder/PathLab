@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "description": "Pathology home appointment, patient portal, and admin panel",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node --no-warnings=ExperimentalWarning server.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
   }
 }

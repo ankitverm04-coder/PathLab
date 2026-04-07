@@ -3,14 +3,12 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { URL } = require("url");
-const { DatabaseSync } = require("node:sqlite");
 
 const PORT = process.env.PORT || 3000;
 const ROOT_DIR = __dirname;
 const DATA_DIR = path.join(ROOT_DIR, "data");
 const DB_PATH = path.join(DATA_DIR, "pathlab.sqlite");
 const LEGACY_STORE_PATH = path.join(DATA_DIR, "store.json");
-const REPORT_FILES_DIR = path.join(DATA_DIR, "report-files");
 const OTP_TTL_MS = 10 * 60 * 1000;
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const ADMIN_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
@@ -19,6 +17,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || "";
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
 const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER || "";
+const DATABASE_URL = process.env.DATABASE_URL || "";
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -84,11 +83,8 @@ const defaultSeedReports = {
   }
 };
 
-ensureDataDir();
-const db = new DatabaseSync(DB_PATH);
-setupDatabase();
-runMigrations();
-seedDatabase();
+let db = null;
+let databaseKind = DATABASE_URL ? "postgres" : "sqlite";
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -107,13 +103,43 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`PathLab Home Care server running at http://localhost:${PORT}`);
-});
+startServer();
+
+async function startServer() {
+  try {
+    await initializeDatabase();
+    server.listen(PORT, () => {
+      console.log(`PathLab Home Care server running at http://localhost:${PORT} using ${databaseKind}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server", error);
+    process.exit(1);
+  }
+}
+
+async function initializeDatabase() {
+  if (databaseKind === "postgres") {
+    const { Pool } = require("pg");
+    db = new Pool({
+      connectionString: DATABASE_URL,
+      ssl: DATABASE_URL.includes("render.com")
+        ? { rejectUnauthorized: false }
+        : undefined
+    });
+  } else {
+    ensureDataDir();
+    const { DatabaseSync } = require("node:sqlite");
+    db = new DatabaseSync(DB_PATH);
+  }
+
+  await setupDatabase();
+  await runMigrations();
+  await seedDatabase();
+}
 
 async function handleApi(req, res, pathname) {
   if (req.method === "GET" && pathname === "/api/health") {
-    sendJson(res, 200, { ok: true, date: new Date().toISOString() });
+    sendJson(res, 200, { ok: true, date: new Date().toISOString(), database: databaseKind });
     return;
   }
 
@@ -141,16 +167,16 @@ async function handleApi(req, res, pathname) {
       return;
     }
 
-    const bookingId = generateUniqueId("appointments", "booking_id", "PLB");
-    const reportId = generateUniqueId("reports", "report_id", "PLR");
+    const bookingId = await generateUniqueId("appointments", "booking_id", "PLB");
+    const reportId = await generateUniqueId("reports", "report_id", "PLR");
     const createdAt = new Date().toISOString();
 
-    db.prepare(`
+    await dbRun(`
       INSERT INTO appointments (
         booking_id, report_id, patient_name, phone_number, address, city,
         appointment_date, package_name, time_slot, notes, status, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `, [
       bookingId,
       reportId,
       patientName,
@@ -163,14 +189,14 @@ async function handleApi(req, res, pathname) {
       notes,
       "Appointment confirmed",
       createdAt
-    );
+    ]);
 
-    db.prepare(`
+    await dbRun(`
       INSERT INTO reports (
         report_id, patient_name, phone_number, package_name, status, badge_class,
         collected_on, doctor_note, report_items, download_label, can_download, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `, [
       reportId,
       patientName,
       phoneNumber,
@@ -185,16 +211,16 @@ async function handleApi(req, res, pathname) {
         "Lab processing will begin after collection"
       ]),
       "Download report",
-      0,
+      false,
       createdAt
-    );
+    ]);
 
-    sendJson(res, 201, serializeAppointment(getAppointmentByBookingId(bookingId)));
+    sendJson(res, 201, serializeAppointment(await getAppointmentByBookingId(bookingId)));
     return;
   }
 
   if (req.method === "GET" && pathname === "/api/appointments") {
-    const rows = db.prepare("SELECT * FROM appointments ORDER BY created_at DESC").all();
+    const rows = await dbAll("SELECT * FROM appointments ORDER BY created_at DESC");
     sendJson(res, 200, rows.map(serializeAppointment));
     return;
   }
@@ -208,13 +234,13 @@ async function handleApi(req, res, pathname) {
       return;
     }
 
-    const patient = db.prepare(`
+    const patient = await dbGet(`
       SELECT patient_name, phone_number
       FROM appointments
       WHERE phone_number = ?
       ORDER BY created_at DESC
       LIMIT 1
-    `).get(phoneNumber);
+    `, [phoneNumber]);
 
     if (!patient) {
       sendJson(res, 404, { error: "No patient account found for this phone number. Book a test first." });
@@ -224,13 +250,13 @@ async function handleApi(req, res, pathname) {
     const otp = String(Math.floor(100000 + Math.random() * 900000));
     const now = Date.now();
 
-    db.prepare("UPDATE otp_codes SET consumed_at = ? WHERE phone_number = ? AND consumed_at IS NULL").run(now, phoneNumber);
-    db.prepare("INSERT INTO otp_codes (phone_number, code, expires_at, created_at) VALUES (?, ?, ?, ?)").run(
+    await dbRun("UPDATE otp_codes SET consumed_at = ? WHERE phone_number = ? AND consumed_at IS NULL", [now, phoneNumber]);
+    await dbRun("INSERT INTO otp_codes (phone_number, code, expires_at, created_at) VALUES (?, ?, ?, ?)", [
       phoneNumber,
       otp,
       now + OTP_TTL_MS,
       now
-    );
+    ]);
 
     const delivery = await sendOtpMessage(phoneNumber, otp);
 
@@ -257,28 +283,28 @@ async function handleApi(req, res, pathname) {
     }
 
     const now = Date.now();
-    const otpRecord = db.prepare(`
+    const otpRecord = await dbGet(`
       SELECT id
       FROM otp_codes
       WHERE phone_number = ? AND code = ? AND consumed_at IS NULL AND expires_at > ?
       ORDER BY created_at DESC
       LIMIT 1
-    `).get(phoneNumber, otp, now);
+    `, [phoneNumber, otp, now]);
 
     if (!otpRecord) {
       sendJson(res, 401, { error: "Invalid or expired OTP" });
       return;
     }
 
-    db.prepare("UPDATE otp_codes SET consumed_at = ? WHERE id = ?").run(now, otpRecord.id);
+    await dbRun("UPDATE otp_codes SET consumed_at = ? WHERE id = ?", [now, otpRecord.id]);
 
     const token = crypto.randomBytes(24).toString("hex");
-    db.prepare("INSERT INTO patient_sessions (phone_number, token, expires_at, created_at) VALUES (?, ?, ?, ?)").run(
+    await dbRun("INSERT INTO patient_sessions (phone_number, token, expires_at, created_at) VALUES (?, ?, ?, ?)", [
       phoneNumber,
       token,
       now + SESSION_TTL_MS,
       now
-    );
+    ]);
 
     setCookie(res, "patient_session", token, SESSION_TTL_MS);
     sendJson(res, 200, { ok: true, message: "Patient login successful" });
@@ -288,7 +314,7 @@ async function handleApi(req, res, pathname) {
   if (req.method === "POST" && pathname === "/api/auth/logout") {
     const sessionToken = getCookie(req, "patient_session");
     if (sessionToken) {
-      db.prepare("DELETE FROM patient_sessions WHERE token = ?").run(sessionToken);
+      await dbRun("DELETE FROM patient_sessions WHERE token = ?", [sessionToken]);
     }
 
     clearCookie(res, "patient_session");
@@ -297,32 +323,32 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === "GET" && pathname === "/api/patient/dashboard") {
-    const session = getPatientSession(req);
+    const session = await getPatientSession(req);
 
     if (!session) {
       sendJson(res, 401, { error: "Patient login required" });
       return;
     }
 
-    const patient = db.prepare(`
+    const patient = await dbGet(`
       SELECT patient_name, phone_number
       FROM appointments
       WHERE phone_number = ?
       ORDER BY created_at DESC
       LIMIT 1
-    `).get(session.phoneNumber);
+    `, [session.phoneNumber]);
 
-    const appointments = db.prepare(`
+    const appointments = (await dbAll(`
       SELECT * FROM appointments
       WHERE phone_number = ?
       ORDER BY created_at DESC
-    `).all(session.phoneNumber).map(serializeAppointment);
+    `, [session.phoneNumber])).map(serializeAppointment);
 
-    const reports = db.prepare(`
+    const reports = (await dbAll(`
       SELECT * FROM reports
       WHERE phone_number = ?
       ORDER BY updated_at DESC
-    `).all(session.phoneNumber).map(serializeReport);
+    `, [session.phoneNumber])).map(serializeReport);
 
     sendJson(res, 200, {
       patient: {
@@ -336,17 +362,17 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === "GET" && pathname === "/api/admin/overview") {
-    const session = getAdminSession(req);
+    const session = await getAdminSession(req);
     if (!session) {
       sendJson(res, 401, { error: "Admin login required" });
       return;
     }
-    sendJson(res, 200, getAdminOverview());
+    sendJson(res, 200, await getAdminOverview());
     return;
   }
 
   if (req.method === "GET" && pathname === "/api/admin/me") {
-    const session = getAdminSession(req);
+    const session = await getAdminSession(req);
     if (!session) {
       sendJson(res, 401, { error: "Admin login required" });
       return;
@@ -369,12 +395,12 @@ async function handleApi(req, res, pathname) {
     const now = Date.now();
     const token = crypto.randomBytes(24).toString("hex");
 
-    db.prepare("INSERT INTO admin_sessions (username, token, expires_at, created_at) VALUES (?, ?, ?, ?)").run(
+    await dbRun("INSERT INTO admin_sessions (username, token, expires_at, created_at) VALUES (?, ?, ?, ?)", [
       username,
       token,
       now + ADMIN_SESSION_TTL_MS,
       now
-    );
+    ]);
 
     setCookie(res, "admin_session", token, ADMIN_SESSION_TTL_MS);
     sendJson(res, 200, { ok: true, username });
@@ -384,7 +410,7 @@ async function handleApi(req, res, pathname) {
   if (req.method === "POST" && pathname === "/api/admin/logout") {
     const sessionToken = getCookie(req, "admin_session");
     if (sessionToken) {
-      db.prepare("DELETE FROM admin_sessions WHERE token = ?").run(sessionToken);
+      await dbRun("DELETE FROM admin_sessions WHERE token = ?", [sessionToken]);
     }
 
     clearCookie(res, "admin_session");
@@ -393,42 +419,43 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === "GET" && pathname === "/api/admin/appointments") {
-    const session = getAdminSession(req);
+    const session = await getAdminSession(req);
     if (!session) {
       sendJson(res, 401, { error: "Admin login required" });
       return;
     }
-    const appointments = db.prepare("SELECT * FROM appointments ORDER BY created_at DESC").all().map(serializeAppointment);
+    const appointments = (await dbAll("SELECT * FROM appointments ORDER BY created_at DESC")).map(serializeAppointment);
     sendJson(res, 200, appointments);
     return;
   }
 
   if (req.method === "GET" && pathname === "/api/admin/reports") {
-    const session = getAdminSession(req);
+    const session = await getAdminSession(req);
     if (!session) {
       sendJson(res, 401, { error: "Admin login required" });
       return;
     }
-    const reports = db.prepare("SELECT * FROM reports ORDER BY updated_at DESC").all().map(serializeReport);
+    const reports = (await dbAll("SELECT * FROM reports ORDER BY updated_at DESC")).map(serializeReport);
     sendJson(res, 200, reports);
     return;
   }
 
   if (req.method === "PATCH" && pathname.startsWith("/api/admin/reports/")) {
-    const session = getAdminSession(req);
+    const session = await getAdminSession(req);
     if (!session) {
       sendJson(res, 401, { error: "Admin login required" });
       return;
     }
 
     const reportId = pathname.split("/").pop().toUpperCase();
-    const existingReport = getReportById(reportId);
+    const existingRow = await getReportRowById(reportId);
 
-    if (!existingReport) {
+    if (!existingRow) {
       sendJson(res, 404, { error: "Report not found" });
       return;
     }
 
+    const existingReport = serializeReport(existingRow);
     const body = await readJsonBody(req);
     const status = String(body.status || existingReport.status).trim();
     const canDownload = body.canDownload === undefined ? existingReport.canDownload : Boolean(body.canDownload);
@@ -442,6 +469,7 @@ async function handleApi(req, res, pathname) {
           .split("\n")
           .map((item) => item.trim())
           .filter(Boolean);
+
     let uploadedFile = null;
 
     try {
@@ -451,35 +479,39 @@ async function handleApi(req, res, pathname) {
       return;
     }
 
-    const storedFile = uploadedFile ? storeReportFile(reportId, uploadedFile) : null;
+    const reportFileName = uploadedFile ? buildStoredReportFileName(reportId, uploadedFile.name) : (existingRow.report_file_name || "");
+    const reportFileMime = uploadedFile ? uploadedFile.contentType : (existingRow.report_file_mime || "");
+    const reportFileDataBase64 = uploadedFile ? uploadedFile.dataBase64 : (existingRow.report_file_data_base64 || "");
+    const reportFilePath = uploadedFile ? "" : (existingRow.report_file_path || "");
 
-    db.prepare(`
+    await dbRun(`
       UPDATE reports
       SET status = ?, badge_class = ?, collected_on = ?, doctor_note = ?, report_items = ?, download_label = ?, can_download = ?, updated_at = ?,
-          report_file_name = ?, report_file_path = ?, report_file_mime = ?
+          report_file_name = ?, report_file_path = ?, report_file_mime = ?, report_file_data_base64 = ?
       WHERE report_id = ?
-    `).run(
+    `, [
       status,
       badgeClass,
       collectedOn,
       doctorNote,
       JSON.stringify(reportItems.length ? reportItems : existingReport.reportItems),
       downloadLabel,
-      canDownload ? 1 : 0,
+      canDownload,
       new Date().toISOString(),
-      storedFile ? storedFile.fileName : existingReport.reportFileName,
-      storedFile ? storedFile.filePath : existingReport.reportFilePath,
-      storedFile ? storedFile.mimeType : existingReport.reportFileMime,
+      reportFileName,
+      reportFilePath,
+      reportFileMime,
+      reportFileDataBase64,
       reportId
-    );
+    ]);
 
-    sendJson(res, 200, getReportById(reportId));
+    sendJson(res, 200, await getReportById(reportId));
     return;
   }
 
   if (req.method === "GET" && pathname.startsWith("/api/reports/")) {
     const reportId = pathname.split("/").pop().toUpperCase();
-    const report = getReportById(reportId);
+    const report = await getReportById(reportId);
 
     if (!report) {
       sendJson(res, 404, { error: "Report not found" });
@@ -492,7 +524,8 @@ async function handleApi(req, res, pathname) {
 
   if (req.method === "GET" && pathname.startsWith("/api/download-report/")) {
     const reportId = pathname.split("/").pop().toUpperCase();
-    const report = getReportById(reportId);
+    const reportRow = await getReportRowById(reportId);
+    const report = reportRow ? serializeReport(reportRow) : null;
 
     if (!report) {
       sendText(res, 404, "Report not found");
@@ -501,6 +534,17 @@ async function handleApi(req, res, pathname) {
 
     if (!report.canDownload) {
       sendText(res, 400, "Report is not ready for download yet");
+      return;
+    }
+
+    if (reportRow.report_file_data_base64) {
+      const buffer = Buffer.from(reportRow.report_file_data_base64, "base64");
+      res.writeHead(200, {
+        "Content-Type": report.reportFileMime || "application/pdf",
+        "Content-Disposition": `attachment; filename="${report.reportFileName || `${reportId}.pdf`}"`,
+        "Content-Length": buffer.length
+      });
+      res.end(buffer);
       return;
     }
 
@@ -568,82 +612,142 @@ function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
+}
 
-  if (!fs.existsSync(REPORT_FILES_DIR)) {
-    fs.mkdirSync(REPORT_FILES_DIR, { recursive: true });
+async function setupDatabase() {
+  const statements = databaseKind === "postgres"
+    ? [
+        `CREATE TABLE IF NOT EXISTS appointments (
+          id SERIAL PRIMARY KEY,
+          booking_id TEXT NOT NULL UNIQUE,
+          report_id TEXT NOT NULL UNIQUE,
+          patient_name TEXT NOT NULL,
+          phone_number TEXT NOT NULL,
+          address TEXT NOT NULL,
+          city TEXT NOT NULL,
+          appointment_date TEXT NOT NULL,
+          package_name TEXT NOT NULL,
+          time_slot TEXT NOT NULL,
+          notes TEXT DEFAULT '',
+          status TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )`,
+        `CREATE TABLE IF NOT EXISTS reports (
+          id SERIAL PRIMARY KEY,
+          report_id TEXT NOT NULL UNIQUE,
+          patient_name TEXT NOT NULL,
+          phone_number TEXT,
+          package_name TEXT NOT NULL,
+          status TEXT NOT NULL,
+          badge_class TEXT NOT NULL,
+          collected_on TEXT NOT NULL,
+          doctor_note TEXT NOT NULL,
+          report_items TEXT NOT NULL,
+          download_label TEXT NOT NULL,
+          can_download BOOLEAN NOT NULL DEFAULT FALSE,
+          updated_at TEXT NOT NULL,
+          report_file_name TEXT,
+          report_file_path TEXT,
+          report_file_mime TEXT,
+          report_file_data_base64 TEXT
+        )`,
+        `CREATE TABLE IF NOT EXISTS otp_codes (
+          id SERIAL PRIMARY KEY,
+          phone_number TEXT NOT NULL,
+          code TEXT NOT NULL,
+          expires_at BIGINT NOT NULL,
+          consumed_at BIGINT,
+          created_at BIGINT NOT NULL
+        )`,
+        `CREATE TABLE IF NOT EXISTS patient_sessions (
+          id SERIAL PRIMARY KEY,
+          phone_number TEXT NOT NULL,
+          token TEXT NOT NULL UNIQUE,
+          expires_at BIGINT NOT NULL,
+          created_at BIGINT NOT NULL
+        )`,
+        `CREATE TABLE IF NOT EXISTS admin_sessions (
+          id SERIAL PRIMARY KEY,
+          username TEXT NOT NULL,
+          token TEXT NOT NULL UNIQUE,
+          expires_at BIGINT NOT NULL,
+          created_at BIGINT NOT NULL
+        )`
+      ]
+    : [
+        `CREATE TABLE IF NOT EXISTS appointments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          booking_id TEXT NOT NULL UNIQUE,
+          report_id TEXT NOT NULL UNIQUE,
+          patient_name TEXT NOT NULL,
+          phone_number TEXT NOT NULL,
+          address TEXT NOT NULL,
+          city TEXT NOT NULL,
+          appointment_date TEXT NOT NULL,
+          package_name TEXT NOT NULL,
+          time_slot TEXT NOT NULL,
+          notes TEXT DEFAULT '',
+          status TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )`,
+        `CREATE TABLE IF NOT EXISTS reports (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          report_id TEXT NOT NULL UNIQUE,
+          patient_name TEXT NOT NULL,
+          phone_number TEXT,
+          package_name TEXT NOT NULL,
+          status TEXT NOT NULL,
+          badge_class TEXT NOT NULL,
+          collected_on TEXT NOT NULL,
+          doctor_note TEXT NOT NULL,
+          report_items TEXT NOT NULL,
+          download_label TEXT NOT NULL,
+          can_download INTEGER NOT NULL DEFAULT 0,
+          updated_at TEXT NOT NULL,
+          report_file_name TEXT,
+          report_file_path TEXT,
+          report_file_mime TEXT,
+          report_file_data_base64 TEXT
+        )`,
+        `CREATE TABLE IF NOT EXISTS otp_codes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          phone_number TEXT NOT NULL,
+          code TEXT NOT NULL,
+          expires_at INTEGER NOT NULL,
+          consumed_at INTEGER,
+          created_at INTEGER NOT NULL
+        )`,
+        `CREATE TABLE IF NOT EXISTS patient_sessions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          phone_number TEXT NOT NULL,
+          token TEXT NOT NULL UNIQUE,
+          expires_at INTEGER NOT NULL,
+          created_at INTEGER NOT NULL
+        )`,
+        `CREATE TABLE IF NOT EXISTS admin_sessions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT NOT NULL,
+          token TEXT NOT NULL UNIQUE,
+          expires_at INTEGER NOT NULL,
+          created_at INTEGER NOT NULL
+        )`
+      ];
+
+  for (const statement of statements) {
+    await dbExec(statement);
   }
 }
 
-function setupDatabase() {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS appointments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      booking_id TEXT NOT NULL UNIQUE,
-      report_id TEXT NOT NULL UNIQUE,
-      patient_name TEXT NOT NULL,
-      phone_number TEXT NOT NULL,
-      address TEXT NOT NULL,
-      city TEXT NOT NULL,
-      appointment_date TEXT NOT NULL,
-      package_name TEXT NOT NULL,
-      time_slot TEXT NOT NULL,
-      notes TEXT DEFAULT '',
-      status TEXT NOT NULL,
-      created_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS reports (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      report_id TEXT NOT NULL UNIQUE,
-      patient_name TEXT NOT NULL,
-      phone_number TEXT,
-      package_name TEXT NOT NULL,
-      status TEXT NOT NULL,
-      badge_class TEXT NOT NULL,
-      collected_on TEXT NOT NULL,
-      doctor_note TEXT NOT NULL,
-      report_items TEXT NOT NULL,
-      download_label TEXT NOT NULL,
-      can_download INTEGER NOT NULL DEFAULT 0,
-      updated_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS otp_codes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      phone_number TEXT NOT NULL,
-      code TEXT NOT NULL,
-      expires_at INTEGER NOT NULL,
-      consumed_at INTEGER,
-      created_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS patient_sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      phone_number TEXT NOT NULL,
-      token TEXT NOT NULL UNIQUE,
-      expires_at INTEGER NOT NULL,
-      created_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS admin_sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL,
-      token TEXT NOT NULL UNIQUE,
-      expires_at INTEGER NOT NULL,
-      created_at INTEGER NOT NULL
-    );
-  `);
+async function runMigrations() {
+  await ensureColumnExists("reports", "report_file_name", "TEXT");
+  await ensureColumnExists("reports", "report_file_path", "TEXT");
+  await ensureColumnExists("reports", "report_file_mime", "TEXT");
+  await ensureColumnExists("reports", "report_file_data_base64", "TEXT");
 }
 
-function runMigrations() {
-  ensureColumnExists("reports", "report_file_name", "TEXT");
-  ensureColumnExists("reports", "report_file_path", "TEXT");
-  ensureColumnExists("reports", "report_file_mime", "TEXT");
-}
-
-function seedDatabase() {
-  const appointmentCount = db.prepare("SELECT COUNT(*) AS count FROM appointments").get().count;
-  const reportCount = db.prepare("SELECT COUNT(*) AS count FROM reports").get().count;
+async function seedDatabase() {
+  const appointmentCount = await getCount("SELECT COUNT(*) AS count FROM appointments");
+  const reportCount = await getCount("SELECT COUNT(*) AS count FROM reports");
 
   if (appointmentCount || reportCount) {
     return;
@@ -662,24 +766,18 @@ function seedDatabase() {
   const legacyAppointments = legacyStore?.appointments || [];
   const legacyReports = legacyStore?.reports || defaultSeedReports;
 
-  const insertAppointment = db.prepare(`
-    INSERT OR IGNORE INTO appointments (
-      booking_id, report_id, patient_name, phone_number, address, city,
-      appointment_date, package_name, time_slot, notes, status, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const insertReport = db.prepare(`
-    INSERT OR IGNORE INTO reports (
-      report_id, patient_name, phone_number, package_name, status, badge_class,
-      collected_on, doctor_note, report_items, download_label, can_download, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
   for (const appointment of legacyAppointments) {
-    insertAppointment.run(
-      appointment.bookingId || generateUniqueId("appointments", "booking_id", "PLB"),
-      appointment.reportId || generateUniqueId("reports", "report_id", "PLR"),
+    const bookingId = appointment.bookingId || await generateUniqueId("appointments", "booking_id", "PLB");
+    const reportId = appointment.reportId || await generateUniqueId("reports", "report_id", "PLR");
+
+    await insertIgnore(`
+      INSERT INTO appointments (
+        booking_id, report_id, patient_name, phone_number, address, city,
+        appointment_date, package_name, time_slot, notes, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      bookingId,
+      reportId,
       appointment.patientName || "Patient",
       normalizePhoneNumber(appointment.phoneNumber) || "9999999999",
       appointment.address || "Address unavailable",
@@ -690,13 +788,18 @@ function seedDatabase() {
       appointment.notes || "",
       appointment.status || "Appointment confirmed",
       new Date().toISOString()
-    );
+    ]);
   }
 
   for (const [reportId, report] of Object.entries(legacyReports)) {
     const appointmentForReport = legacyAppointments.find((appointment) => appointment.reportId === reportId);
 
-    insertReport.run(
+    await insertIgnore(`
+      INSERT INTO reports (
+        report_id, patient_name, phone_number, package_name, status, badge_class,
+        collected_on, doctor_note, report_items, download_label, can_download, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
       reportId,
       report.patient || "Patient",
       normalizePhoneNumber(report.phoneNumber || appointmentForReport?.phoneNumber) || null,
@@ -707,28 +810,31 @@ function seedDatabase() {
       report.doctorNote || "Report update pending.",
       JSON.stringify(report.reportItems || []),
       report.downloadLabel || "Download report",
-      report.canDownload ? 1 : 0,
+      Boolean(report.canDownload),
       new Date().toISOString()
-    );
+    ]);
   }
 }
 
-function getAppointmentByBookingId(bookingId) {
-  const row = db.prepare("SELECT * FROM appointments WHERE booking_id = ? LIMIT 1").get(bookingId);
-  return row || null;
+async function getAppointmentByBookingId(bookingId) {
+  return await dbGet("SELECT * FROM appointments WHERE booking_id = ? LIMIT 1", [bookingId]);
 }
 
-function getReportById(reportId) {
-  const row = db.prepare("SELECT * FROM reports WHERE report_id = ? LIMIT 1").get(reportId);
+async function getReportRowById(reportId) {
+  return await dbGet("SELECT * FROM reports WHERE report_id = ? LIMIT 1", [reportId]);
+}
+
+async function getReportById(reportId) {
+  const row = await getReportRowById(reportId);
   return row ? serializeReport(row) : null;
 }
 
-function getAdminOverview() {
+async function getAdminOverview() {
   return {
-    totalAppointments: db.prepare("SELECT COUNT(*) AS count FROM appointments").get().count,
-    totalReports: db.prepare("SELECT COUNT(*) AS count FROM reports").get().count,
-    readyReports: db.prepare("SELECT COUNT(*) AS count FROM reports WHERE can_download = 1").get().count,
-    pendingReports: db.prepare("SELECT COUNT(*) AS count FROM reports WHERE can_download = 0").get().count
+    totalAppointments: await getCount("SELECT COUNT(*) AS count FROM appointments"),
+    totalReports: await getCount("SELECT COUNT(*) AS count FROM reports"),
+    readyReports: await getCount("SELECT COUNT(*) AS count FROM reports WHERE can_download = ?", [databaseKind === "postgres" ? true : 1]),
+    pendingReports: await getCount("SELECT COUNT(*) AS count FROM reports WHERE can_download = ?", [databaseKind === "postgres" ? false : 0])
   };
 }
 
@@ -762,32 +868,32 @@ function serializeReport(row) {
     doctorNote: row.doctor_note,
     reportItems: JSON.parse(row.report_items || "[]"),
     downloadLabel: row.download_label,
-    canDownload: Boolean(row.can_download),
+    canDownload: normalizeBoolean(row.can_download),
     reportFileName: row.report_file_name || "",
     reportFilePath: row.report_file_path || "",
     reportFileMime: row.report_file_mime || "",
-    hasPdf: Boolean(row.report_file_path)
+    hasPdf: Boolean(row.report_file_data_base64 || row.report_file_path)
   };
 }
 
-function generateUniqueId(table, column, prefix) {
+async function generateUniqueId(table, column, prefix) {
   let identifier = "";
   let exists = true;
 
   while (exists) {
     identifier = `${prefix}${Math.floor(1000 + Math.random() * 9000)}`;
-    exists = Boolean(db.prepare(`SELECT 1 FROM ${table} WHERE ${column} = ? LIMIT 1`).get(identifier));
+    exists = Boolean(await dbGet(`SELECT 1 AS exists_value FROM ${table} WHERE ${column} = ? LIMIT 1`, [identifier]));
   }
 
   return identifier;
 }
 
 function inferBadgeClass(status, canDownload) {
-  if (canDownload || /ready/i.test(status)) {
+  if (canDownload || /ready/i.test(status || "")) {
     return "ready";
   }
 
-  if (/review/i.test(status)) {
+  if (/review/i.test(status || "")) {
     return "review";
   }
 
@@ -820,7 +926,7 @@ function formatDisplayDateTime(value) {
   }).format(date);
 }
 
-function getPatientSession(req) {
+async function getPatientSession(req) {
   const token = getCookie(req, "patient_session");
 
   if (!token) {
@@ -828,12 +934,12 @@ function getPatientSession(req) {
   }
 
   const now = Date.now();
-  const session = db.prepare(`
+  const session = await dbGet(`
     SELECT phone_number, token, expires_at
     FROM patient_sessions
     WHERE token = ? AND expires_at > ?
     LIMIT 1
-  `).get(token, now);
+  `, [token, now]);
 
   if (!session) {
     return null;
@@ -845,7 +951,7 @@ function getPatientSession(req) {
   };
 }
 
-function getAdminSession(req) {
+async function getAdminSession(req) {
   const token = getCookie(req, "admin_session");
 
   if (!token) {
@@ -853,12 +959,12 @@ function getAdminSession(req) {
   }
 
   const now = Date.now();
-  const session = db.prepare(`
+  const session = await dbGet(`
     SELECT username, token, expires_at
     FROM admin_sessions
     WHERE token = ? AND expires_at > ?
     LIMIT 1
-  `).get(token, now);
+  `, [token, now]);
 
   if (!session) {
     return null;
@@ -889,7 +995,12 @@ function clearCookie(res, name) {
   res.setHeader("Set-Cookie", `${name}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax`);
 }
 
-function ensureColumnExists(tableName, columnName, columnDefinition) {
+async function ensureColumnExists(tableName, columnName, columnDefinition) {
+  if (databaseKind === "postgres") {
+    await dbExec(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS ${columnName} ${columnDefinition}`);
+    return;
+  }
+
   const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
   const exists = columns.some((column) => column.name === columnName);
 
@@ -918,19 +1029,9 @@ function normalizeUploadedReportFile(file) {
   return { name, contentType, dataBase64 };
 }
 
-function storeReportFile(reportId, file) {
-  const safeBaseName = path.basename(file.name).replace(/[^a-zA-Z0-9._-]/g, "-");
-  const fileName = `${reportId}-${Date.now()}-${safeBaseName}`;
-  const absoluteFilePath = path.join(REPORT_FILES_DIR, fileName);
-  const buffer = Buffer.from(file.dataBase64, "base64");
-
-  fs.writeFileSync(absoluteFilePath, buffer);
-
-  return {
-    fileName,
-    filePath: path.join("data", "report-files", fileName),
-    mimeType: file.contentType
-  };
+function buildStoredReportFileName(reportId, originalName) {
+  const safeBaseName = path.basename(originalName).replace(/[^a-zA-Z0-9._-]/g, "-");
+  return `${reportId}-${Date.now()}-${safeBaseName}`;
 }
 
 async function sendOtpMessage(phoneNumber, otp) {
@@ -998,4 +1099,73 @@ function readJsonBody(req) {
 
     req.on("error", reject);
   });
+}
+
+async function dbExec(sql) {
+  if (databaseKind === "postgres") {
+    await db.query(sql);
+    return;
+  }
+
+  db.exec(sql);
+}
+
+async function dbGet(sql, params = []) {
+  if (databaseKind === "postgres") {
+    const result = await db.query(toPostgresSql(sql), params);
+    return result.rows[0] || null;
+  }
+
+  return db.prepare(sql).get(...params) || null;
+}
+
+async function dbAll(sql, params = []) {
+  if (databaseKind === "postgres") {
+    const result = await db.query(toPostgresSql(sql), params);
+    return result.rows;
+  }
+
+  return db.prepare(sql).all(...params);
+}
+
+async function dbRun(sql, params = []) {
+  if (databaseKind === "postgres") {
+    const result = await db.query(toPostgresSql(sql), params);
+    return { changes: result.rowCount };
+  }
+
+  return db.prepare(sql).run(...params);
+}
+
+async function insertIgnore(sql, params = []) {
+  if (databaseKind === "postgres") {
+    const normalized = sql.replace(/\s+/g, " ").replace(/INSERT INTO/i, "INSERT INTO");
+    let withConflict = normalized;
+
+    if (/INSERT INTO appointments/i.test(normalized)) {
+      withConflict = `${normalized} ON CONFLICT (booking_id) DO NOTHING`;
+    } else if (/INSERT INTO reports/i.test(normalized)) {
+      withConflict = `${normalized} ON CONFLICT (report_id) DO NOTHING`;
+    }
+
+    await db.query(toPostgresSql(withConflict), params);
+    return;
+  }
+
+  const sqliteSql = sql.replace(/INSERT INTO/i, "INSERT OR IGNORE INTO");
+  db.prepare(sqliteSql).run(...params);
+}
+
+async function getCount(sql, params = []) {
+  const row = await dbGet(sql, params);
+  return Number(row?.count || 0);
+}
+
+function toPostgresSql(sql) {
+  let index = 0;
+  return sql.replace(/\?/g, () => `$${++index}`);
+}
+
+function normalizeBoolean(value) {
+  return value === true || value === 1 || value === "1";
 }
