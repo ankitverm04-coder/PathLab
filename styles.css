@@ -966,6 +966,9 @@ textarea {
 
   .hero {
     padding: 20px;
+    background:
+      linear-gradient(180deg, rgba(255, 250, 241, 0.96), rgba(246, 238, 225, 0.9)),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='rgba(31,122,92,0.06)' stroke-width='1'%3E%3Ccircle cx='110' cy='110' r='70'/%3E%3Ccircle cx='110' cy='110' r='42'/%3E%3Cpath d='M20 110h180M110 20v180'/%3E%3C/g%3E%3C/svg%3E");
   }
 
   .topbar {
@@ -1019,8 +1022,32 @@ textarea {
     display: grid;
   }
 
+  .hero-content {
+    gap: 18px;
+    margin-top: 24px;
+  }
+
+  .hero-copy {
+    max-width: none;
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .hero-copy .eyebrow,
+  .hero-copy h1,
+  .hero-copy .hero-text {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   h1 {
     max-width: none;
+  }
+
+  .hero-copy h1 {
+    max-width: 14ch;
+    line-height: 1.02;
+    letter-spacing: -0.025em;
   }
 
   .hero-copy p,
@@ -1035,6 +1062,35 @@ textarea {
   .footer-bottom-links {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .hero-actions {
+    margin: 22px 0 18px;
+    gap: 12px;
+  }
+
+  .hero-actions .button {
+    min-height: 48px;
+    box-shadow: 0 12px 22px rgba(31, 42, 31, 0.08);
+  }
+
+  .hero-points {
+    padding-left: 0;
+    margin-top: 2px;
+    gap: 10px;
+    list-style: none;
+  }
+
+  .hero-points li {
+    padding: 11px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.54);
+    border: 1px solid rgba(31, 42, 31, 0.06);
+  }
+
+  .hero-card {
+    padding: 18px;
+    border-radius: 22px;
   }
 
   .button,
